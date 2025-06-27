@@ -1,7 +1,8 @@
 const Shipment = require('../models/Shipment');
 const crypto = require('crypto');
+require('dotenv').config();
 
-const AFTERSHIP_WEBHOOK_SECRET = '4d19ab8db81ecebefacd7f55b0073133'; // move to .env in production
+const AFTERSHIP_WEBHOOK_SECRET = process.env.AFTERSHIP_WEBHOOK_SECRET; // move to .env in production
 
 exports.handleAfterShipWebhook = async (req, res) => {
   try {

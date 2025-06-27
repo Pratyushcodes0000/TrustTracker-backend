@@ -1,12 +1,13 @@
 const axios = require('axios');
 const qs = require('qs');
+require('dotenv').config();
 
 
 exports.sendWhatsApp = async (to, message) => {
   try {
     const payload = qs.stringify({
       channel: 'whatsapp',
-      source: '917834811114', 
+      source: process.env.WHATSAPP_SOURCE_NUMBER, 
       destination: `91${to}`, 
       message,
       'src.name': 'TrustTrack' 
@@ -14,7 +15,7 @@ exports.sendWhatsApp = async (to, message) => {
 
     const headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'apikey': 'vr0ran7ja5vmpnjf3znui4ocnukhuxq1' 
+      'apikey': process.env.WHATSAPP_API_KEY 
     };
 
     const response = await axios.post(

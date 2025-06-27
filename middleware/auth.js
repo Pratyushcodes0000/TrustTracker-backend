@@ -1,9 +1,10 @@
 // middleware/auth.js
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+require('dotenv').config();
 
 const client = new OAuth2Client(
-  '908385555062-qhajjb6pk2o8jkpc9a8mdumt52rd582b.apps.googleusercontent.com'
+  process.env.GOOGLE_CLIENT_ID
 );
 
 const authenticate = async (req, res, next) => {
@@ -18,7 +19,7 @@ const authenticate = async (req, res, next) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: '908385555062-qhajjb6pk2o8jkpc9a8mdumt52rd582b.apps.googleusercontent.com',
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();

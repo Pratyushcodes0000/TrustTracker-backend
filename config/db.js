@@ -1,8 +1,9 @@
 const mongoose = require('mongoose')
+require('dotenv').config();
 
 const connectDB =async ()=>{
     try {
-        const conn = await mongoose.connect('mongodb://127.0.0.1:27017/TrustTracker',{
+        const conn = await mongoose.connect(process.env.MONGODB_URI,{
             useNewUrlParser:true,
             useUnifiedTopology: true // ✅ recommended
         });
