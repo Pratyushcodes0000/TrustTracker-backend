@@ -21,15 +21,14 @@ const authenticate = async (req, res, next) => {
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-
+  
     const payload = ticket.getPayload();
+    console.log('✅ Token audience:', payload.aud);
+    console.log('✅ Expected audience:', process.env.GOOGLE_CLIENT_ID);
+  
     const user = await User.findOne({ sellerGoogleId: payload.sub });
-
-    if (!user) {
-      console.log('🚫 No user found with googleId:', payload.sub);
-      return res.status(401).json({ error: 'User not found' });
-    }
-
+    if (!user) return res.status(401).json({ error: 'User not found' });
+  
     req.user = user;
     next();
   } catch (err) {
