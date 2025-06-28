@@ -18,11 +18,14 @@ const userSchema = new mongoose.Schema({
    unique:false,
    required:false
   },
+  profileImage: {
+    type: String,
+    required: false
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  profileImage: String,
 });
 
 module.exports = mongoose.model('User', userSchema);

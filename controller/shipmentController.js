@@ -4,9 +4,10 @@ const generateTrackingId = require('../utils/generateTrackingId');
 const { sendWhatsApp, getMessageTemplate } = require('../services/notificationService');
 const axios = require('axios')
 
-
+// Check if AfterShip API key is configured
+const AFTERSHIP_API_KEY = process.env.AFTERSHIP_API_KEY;
 const headers = {
-  'aftership-api-key': process.env.AFTERSHIP_API_KEY,
+  'aftership-api-key': AFTERSHIP_API_KEY,
   'Content-Type': 'application/json',
 };
 
@@ -20,36 +21,95 @@ exports.createShipment = async (req, res) => {
     trackingId
   } = req.body;
 
+  // Validate required fields
+  if (!customerName || !customerPhone || !customerAddress || !courierSlug) {
+    console.error('❌ Missing required fields:', { customerName, customerPhone, customerAddress, courierSlug });
+    return res.status(400).json({ 
+      error: 'Missing required fields. Please provide customerName, customerPhone, customerAddress, and courierSlug.' 
+    });
+  }
+
+  // Validate sellerGoogleId is present
+  if (!req.user || !req.user.sellerGoogleId) {
+    console.error('❌ Missing sellerGoogleId in user object:', req.user);
+    return res.status(401).json({ error: 'User authentication required' });
+  }
+
+  console.log('📦 Creating shipment with data:', {
+    customerName,
+    customerPhone,
+    customerAddress,
+    courierName,
+    courierSlug,
+    trackingId,
+    sellerGoogleId: req.user.sellerGoogleId
+  });
+
+  // Set courierName if not provided
+  const finalCourierName = courierName || (courierSlug === 'manual' ? 'Manual' : courierSlug);
+
   try {
-    // Skip AfterShip if courier is manual
-    if (courierName && courierName.toLowerCase() !== 'manual' && trackingId) {
-      await axios.post('https://api.aftership.com/v4/trackings', {
-        tracking: {
-          slug: courierSlug,
-          tracking_number: trackingId,
-        }
-      }, { headers });
+    // Skip AfterShip if courier is manual or if API key is not configured
+    if (finalCourierName && finalCourierName.toLowerCase() !== 'manual' && trackingId && AFTERSHIP_API_KEY) {
+      console.log('🚚 Calling AfterShip API...');
+      try {
+        await axios.post('https://api.aftership.com/v4/trackings', {
+          tracking: {
+            slug: courierSlug,
+            tracking_number: trackingId,
+          }
+        }, { headers });
+        console.log('✅ AfterShip API call successful');
+      } catch (aftershipError) {
+        console.error('⚠️ AfterShip API call failed:', aftershipError.response?.data || aftershipError.message);
+        // Continue with shipment creation even if AfterShip fails
+      }
+    } else {
+      if (!AFTERSHIP_API_KEY) {
+        console.log('⏭️ Skipping AfterShip API call (API key not configured)');
+      } else {
+        console.log('⏭️ Skipping AfterShip API call (manual courier or no tracking ID)');
+      }
     }
 
+    // Generate internal tracking code
+    const internalTrackingCode = generateTrackingId();
+    console.log('🔢 Generated tracking code:', internalTrackingCode);
+
     // Save shipment in MongoDB
+    console.log('💾 Saving shipment to database...');
     const shipment = await Shipment.create({
       sellerGoogleId: req.user.sellerGoogleId,
       customerName,
       customerPhone,
       customerAddress,
-      courierName,
+      courierName: finalCourierName,
       courierSlug,
       trackingId,
-      internalTrackingCode: generateTrackingId(),
+      internalTrackingCode,
       currentStatus: 'Created',
     });
 
+    console.log('✅ Shipment created successfully:', shipment._id);
     res.status(201).json({ message: 'Shipment created', data: shipment });
   } catch (err) {
-    console.error('Error creating shipment:', err.message);
+    console.error('❌ Error creating shipment:', err);
+    console.error('❌ Error details:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack
+    });
+    
     if (err.name === 'ValidationError') {
+      console.error('❌ Validation errors:', err.errors);
       return res.status(400).json({ error: err.message });
     }
+    
+    if (err.code === 11000) {
+      console.error('❌ Duplicate key error:', err.keyValue);
+      return res.status(400).json({ error: 'Duplicate tracking code generated. Please try again.' });
+    }
+    
     res.status(500).json({ error: 'Failed to create shipment' });
   }
 };

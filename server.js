@@ -2,6 +2,17 @@ const express = require('express');
 const connectDB = require('./config/db');
 require('dotenv').config(); // Load environment variables
 
+// Validate required environment variables
+const requiredEnvVars = ['MONGODB_URI', 'GOOGLE_CLIENT_ID'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars);
+  process.exit(1);
+}
+
+console.log('✅ Environment variables validated');
+
 connectDB();
 
 //import routes here
