@@ -58,3 +58,23 @@ exports.Login = async (req, res) => {
     return res.status(401).json({ message: 'Invalid Google token' });
   }
 };
+
+exports.validateToken = async (req, res) => {
+  try {
+    // If we reach here, the token is valid (authenticate middleware passed)
+    res.status(200).json({ 
+      success: true, 
+      message: 'Token is valid',
+      user: {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        profileImage: req.user.profileImage,
+        sellerGoogleId: req.user.sellerGoogleId,
+      }
+    });
+  } catch (err) {
+    console.error('❌ Token validation error:', err);
+    res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+};
