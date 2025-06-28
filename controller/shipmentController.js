@@ -177,3 +177,54 @@ exports.getShipmentById = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+exports.getShipmentByTrackingCode = async (req, res) => {
+  const { trackingCode } = req.params;
+
+  try {
+    console.log('🔍 Looking up shipment with tracking code:', trackingCode);
+    
+    // Find shipment by internal tracking code
+    const shipment = await Shipment.findOne({ internalTrackingCode: trackingCode });
+    
+    if (!shipment) {
+      console.log('❌ Shipment not found for tracking code:', trackingCode);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Shipment not found' 
+      });
+    }
+
+    // Get tracking logs for this shipment
+    const logs = await TrackingLog.find({ shipment: shipment._id })
+      .sort({ timestamp: -1 }); // Most recent first
+
+    console.log('✅ Shipment found:', shipment.internalTrackingCode);
+    console.log('📋 Found', logs.length, 'tracking logs');
+
+    // Format the response for the tracking page
+    const trackingData = {
+      internalTrackingCode: shipment.internalTrackingCode,
+      customerName: shipment.customerName,
+      courierName: shipment.courierName,
+      trackingId: shipment.trackingId,
+      currentStatus: shipment.currentStatus,
+      deliveryDate: shipment.deliveryDate,
+      createdAt: shipment.createdAt,
+      logs: logs.map(log => ({
+        status: log.status,
+        timestamp: log.timestamp,
+        note: log.note,
+        location: log.location
+      }))
+    };
+
+    res.json(trackingData);
+  } catch (err) {
+    console.error('❌ Error fetching shipment by tracking code:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+};

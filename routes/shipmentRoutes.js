@@ -7,6 +7,9 @@ router.post('/createShipments',authenticate, shipmentController.createShipment);
 router.get('/getShipments',authenticate, shipmentController.getMyShipments);
 router.put('/shipments/:id/status', authenticate, shipmentController.updateShipmentStatus);
 
+// Public tracking endpoint (no authentication required)
+router.get('/track/:trackingCode', shipmentController.getShipmentByTrackingCode);
+
 // Test endpoint to verify database connection
 router.get('/test-db', async (req, res) => {
   try {

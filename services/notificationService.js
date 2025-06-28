@@ -32,15 +32,14 @@ exports.sendWhatsApp = async (to, message) => {
 
 
 exports.getMessageTemplate = (shipment, status, sellerName) => {
-
-  const publicLink = `https://trusttrack.in/track/${shipment.internalTrackingCode}`;
-  const tempLink  =  `http://localhost:8000/api/track/${shipment.internalTrackingCode}`;
+  // Use the actual frontend URL for tracking
+  const trackingLink = `https://trust-tracker-web-frontend.vercel.app/track?id=${shipment.internalTrackingCode}`;
 
   return `📦 Hello ${shipment.customerName}, your order is now *${status}*.
 
 Tracking ID: ${shipment.internalTrackingCode}
 Status: ${status}
-Track here: ${tempLink}
+Track here: ${trackingLink}
 
 Thank you for shopping with ${sellerName || 'our store'}!`;
 };
