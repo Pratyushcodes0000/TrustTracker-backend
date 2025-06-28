@@ -16,7 +16,7 @@ const http = require('http');
 const app = express();
 
 app.use(cors({
-    origin: 'http://localhost:5173', // Replace with your React app's port
+    origin: ['http://localhost:5173','https://trust-tracker-web-frontend.vercel.app'], // Replace with your React app's port
     credentials: true
   }));
 app.use(express.json());
